@@ -2,7 +2,6 @@ package com.shaban.onliner.service
 
 import com.shaban.onliner.api.ApartmentsLoader
 import com.shaban.onliner.dao.ApartmentsDao
-import com.shaban.onliner.util.DurationUtils
 import io.reactivex.Completable
 import io.reactivex.schedulers.Schedulers
 import mu.KotlinLogging
@@ -21,7 +20,7 @@ class ApartmentsDataService(
         return Completable
                 .defer {
                     val delay = getDelay()
-                    logger.info { "We will fetch all apartments in ${DurationUtils.toPrettyString(delay)}" }
+                    logger.info { "We will fetch all apartments at ${Instant.now().plusMillis(delay)}" }
                     Completable
                             .timer(delay, TimeUnit.MILLISECONDS)
                             .andThen(loadAndSaveApartmentsCRx())
