@@ -39,38 +39,45 @@ import java.time.Instant
 val logger = KotlinLogging.logger {}
 
 fun Application.main() {
+
+    val apartmentsDao = MySqlApartmentsDao()
+    apartmentsDao.initDatabase()
+
     install(DefaultHeaders)
     install(CallLogging)
     install(Routing) {
         get("/") {
             call.respondText("My Example Blog2", ContentType.Text.Html)
         }
+        get("/trends") {
+            val days = call.parameters["days"]?.toLong() ?: 5
+            val allFlatsTrendString = getAllFlatsTrendString(apartmentsDao, days)
+            call.respondText(allFlatsTrendString, ContentType.Text.Plain)
+        }
     }
 
     logger.info { "Hello, World!" }
-
-    val apartmentsDao = MySqlApartmentsDao()
-    apartmentsDao.initDatabase()
 
     ApartmentsLoader()
             .loadAllApartmentsORx()
             .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
             .blockingAwait()
 
-    printAllFlatsTrend(apartmentsDao)
     runApartmentsService(apartmentsDao)
 }
 
-private fun printAllFlatsTrend(apartmentsDao: MySqlApartmentsDao) {
+private fun getAllFlatsTrendString(apartmentsDao: MySqlApartmentsDao, days: Long): String {
     val trendOverAllFlatsList = TrendsLogic(apartmentsDao)
-            .getTrendOverAllFlatsSRx(Instant.now().minus(Duration.ofDays(10)), Instant.now())
+            .getTrendOverAllFlatsSRx(Instant.now().minus(Duration.ofDays(days)), Instant.now())
             .blockingGet()
 
     val map = trendOverAllFlatsList.map { it.first to Pair(it.second, it.third) }.toMap()
+    val sb = StringBuilder()
     map.keys.forEach {
         val apartmentIdsString = if (it != Trend.STAND) "-->${map[it]?.second.toString()}" else ""
-        logger.info { -> "$it --> ${map[it]?.first} $apartmentIdsString" }
+        sb.append("$it --> ${map[it]?.first} $apartmentIdsString").append("\n")
     }
+    return sb.toString()
 }
 
 private fun runApartmentsService(apartmentsDao: MySqlApartmentsDao) {
