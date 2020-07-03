@@ -47,7 +47,7 @@ fun Application.main() {
     install(CallLogging)
     install(Routing) {
         get("/") {
-            call.respondText("My Example Blog2", ContentType.Text.Html)
+            call.respondText("Online Trends", ContentType.Text.Html)
         }
         get("/trends") {
             val days = call.parameters["days"]?.toLong() ?: 5
