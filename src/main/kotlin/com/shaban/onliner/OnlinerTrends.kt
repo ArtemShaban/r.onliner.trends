@@ -58,11 +58,6 @@ fun Application.main() {
 
     logger.info { "Hello, World!" }
 
-    ApartmentsLoader()
-            .loadAllApartmentsORx()
-            .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
-            .blockingAwait()
-
     runApartmentsService(apartmentsDao)
 }
 
