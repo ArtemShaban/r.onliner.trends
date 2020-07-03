@@ -60,7 +60,9 @@ fun Application.main() {
             ApartmentsLoader()
                     .loadAllApartmentsORx()
                     .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
-                    .subscribe({}, { e -> logger.error(e) { "Error on loading all apartments and saving to db" } })
+                    .subscribe({ logger.info { "Successfully loaded all apartments from r.onliner.by and saved to db" } },
+                            { e -> logger.error(e) { "Error on loading all apartments and saving to db" } }
+                    )
         }
     }
 
