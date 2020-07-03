@@ -1,1 +1,1 @@
-web: java -jar build/libs/r.onliner.trends-all.jar
+web: java -jar build/libs/r.onliner.trends-0.1-all.jar
