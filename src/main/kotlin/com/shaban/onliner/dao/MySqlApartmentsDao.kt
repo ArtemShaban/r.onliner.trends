@@ -17,11 +17,12 @@ class MySqlApartmentsDao : ApartmentsDao {
     val gson = Gson()
 
     init {
+        val dbCredentials = getDbCredentials()
         val config = HikariConfig().apply {
-            jdbcUrl = "jdbc:mysql://localhost/r_onliner_trends"
+            jdbcUrl = "jdbc:" + dbCredentials.host + "/" + dbCredentials.dbName
             driverClassName = "com.mysql.cj.jdbc.Driver"
-            username = "root"
-            password = "mysqlpassword"
+            username = dbCredentials.username
+            password = dbCredentials.password
             maximumPoolSize = 10
         }
         val dataSource = HikariDataSource(config)
