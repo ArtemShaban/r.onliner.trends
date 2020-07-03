@@ -54,6 +54,14 @@ fun Application.main() {
             val allFlatsTrendString = getAllFlatsTrendString(apartmentsDao, days)
             call.respondText(allFlatsTrendString, ContentType.Text.Plain)
         }
+
+        get("/pull") {
+            logger.info { "Load all apartments from r.onliner.by and save to db" }
+            ApartmentsLoader()
+                    .loadAllApartmentsORx()
+                    .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
+                    .subscribe({}, { e -> logger.error(e) { "Error on loading all apartments and saving to db" } })
+        }
     }
 
     logger.info { "Hello, World!" }
