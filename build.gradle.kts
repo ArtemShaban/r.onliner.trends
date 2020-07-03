@@ -5,6 +5,8 @@ val ktor_version = "1.3.2"
 plugins {
     application
     kotlin("jvm") version "1.3.61"
+
+    id("com.github.johnrengelman.shadow") version "5.0.0"
 }
 
 repositories {
@@ -15,14 +17,24 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<KotlinCompile>().all {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
 application {
     mainClassName = "io.ktor.server.netty.EngineMain"
 }
 
+
+tasks.withType<KotlinCompile>().all {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+tasks.withType<Jar> {
+    manifest {
+        attributes(
+                mapOf(
+                        "Main-Class" to application.mainClassName
+                )
+        )
+    }
+}
 
 dependencies {
     implementation(kotlin("stdlib", "1.2.31"))
