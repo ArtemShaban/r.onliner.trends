@@ -24,6 +24,9 @@ application {
     mainClassName = "io.ktor.server.netty.EngineMain"
 }
 
+tasks.withType<AbstractArchiveTask> {
+    setProperty("archiveBaseName", rootProject.group)
+}
 
 tasks.withType<KotlinCompile>().all {
     kotlinOptions.jvmTarget = "1.8"
