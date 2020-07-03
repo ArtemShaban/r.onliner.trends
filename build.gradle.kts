@@ -68,6 +68,9 @@ dependencies {
     //ktor server
     implementation("io.ktor:ktor-server-netty:$ktor_version")
 
+    //coroutines to rx
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-rx2:1.3.7")
+
     //tests
     testImplementation("junit:junit:4.12")
 }
