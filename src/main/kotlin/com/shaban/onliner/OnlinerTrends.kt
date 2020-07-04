@@ -14,6 +14,7 @@ import io.ktor.http.ContentType
 import io.ktor.response.respondText
 import io.ktor.routing.Routing
 import io.ktor.routing.get
+import kotlinx.coroutines.rx2.await
 import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant
@@ -27,8 +28,8 @@ import java.time.Instant
 + 1.a - trend of cost of flats (compare cost of every flat) Show like that: 1-room flat - 23% goes down, 77% goes up.  2-rooms flat ...
 1.b - trend of average cost square meter in 1-2-3-4 rooms flat in whole Minsk
 
-3 - start as service (ktot https://www.youtube.com/watch?v=zHQ7oBYSHrY)
-4 - start service at some cloud (amazon, google, azure)
++3 - start as service (ktot https://www.youtube.com/watch?v=zHQ7oBYSHrY)
++4 - start service at some cloud (amazon, google, azure)
 
 5 - visualize trend
 6 - make possible to see trends for area ( leonida bedy street)
@@ -57,12 +58,16 @@ fun Application.main() {
 
         get("/pull") {
             logger.info { "Load all apartments from r.onliner.by and save to db" }
+
+            val successText = "Successfully loaded all apartments from r.onliner.by and saved to db"
             ApartmentsLoader()
                     .loadAllApartmentsORx()
                     .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
-                    .subscribe({ logger.info { "Successfully loaded all apartments from r.onliner.by and saved to db" } },
-                            { e -> logger.error(e) { "Error on loading all apartments and saving to db" } }
-                    )
+                    .doOnComplete { logger.info { successText } }
+                    .doOnError { e -> logger.error(e) { "Error on loading all apartments and saving to db" } }
+                    .await()
+
+            call.respondText { successText }
         }
     }
 
