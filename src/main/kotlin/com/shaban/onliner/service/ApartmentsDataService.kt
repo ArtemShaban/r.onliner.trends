@@ -14,7 +14,7 @@ class ApartmentsDataService(
         private val apartmentsDao: ApartmentsDao
 ) {
     private val logger = KotlinLogging.logger { }
-    private val period = Duration.ofHours(4).toMillis()
+    private val period = Duration.ofDays(1).toMillis()
 
     fun runCRx(): Completable {
         return Completable
