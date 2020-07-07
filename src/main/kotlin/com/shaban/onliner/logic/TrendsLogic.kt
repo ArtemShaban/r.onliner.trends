@@ -11,6 +11,17 @@ class TrendsLogic(private val apartmentsDao: ApartmentsDao) {
 
     private val logger = KotlinLogging.logger {}
 
+    fun getPricesOverAllTimeForApartmentORx(apartmentId: Long): Observable<Price> {
+        return apartmentsDao.loadAllPricesORx(apartmentId)
+    }
+
+    fun getTrendOverAllTimeForApartment(apartmentId: Long): Single<Trend> {
+        return apartmentsDao
+                .loadAllPricesORx(apartmentId)
+                .toList()
+                .map { calcUsdTrend(it) }
+    }
+
     fun getTrendOverAllFlatsSRx(fromDay: Instant, toDay: Instant): Single<List<Triple<Trend, Double, List<Long>>>> {
         return Observable
                 .merge(
@@ -21,7 +32,6 @@ class TrendsLogic(private val apartmentsDao: ApartmentsDao) {
                 .flatMapSingle { groupedObservable ->
                     val apartmentId = groupedObservable.key!!
                     groupedObservable
-                            .sorted(compareBy { it.timestamp })
                             .toList()
                             .map { prices ->
                                 if (prices.size < 2) {
@@ -45,7 +55,8 @@ class TrendsLogic(private val apartmentsDao: ApartmentsDao) {
 
     }
 
-    private fun calcUsdTrend(sortedPrices: List<Price>): Trend {
+    private fun calcUsdTrend(prices: List<Price>): Trend {
+        val sortedPrices = prices.sortedBy { it.timestamp }
         val diff = sortedPrices.last().getUsdPrice() - sortedPrices.first().getUsdPrice()
         return when {
             diff < 0 -> Trend.FALL

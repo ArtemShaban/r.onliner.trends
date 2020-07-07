@@ -6,6 +6,7 @@ import com.shaban.onliner.logic.Trend
 import com.shaban.onliner.logic.TrendsLogic
 import com.shaban.onliner.service.ApartmentsDataService
 import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CallLogging
@@ -31,6 +32,8 @@ import java.time.Instant
 +3 - start as service (ktot https://www.youtube.com/watch?v=zHQ7oBYSHrY)
 +4 - start service at some cloud (amazon, google, azure)
 
+4.1 - https://movile.blog/quickly-building-a-kotlin-rest-api-server-using-ktor/
+
 5 - visualize trend
 6 - make possible to see trends for area ( leonida bedy street)
 
@@ -47,15 +50,11 @@ fun Application.main() {
     install(DefaultHeaders)
     install(CallLogging)
     install(Routing) {
-        get("/") {
-            call.respondText("Online Trends", ContentType.Text.Html)
-        }
-        get("/trends") {
-            val days = call.parameters["days"]?.toLong() ?: 5
-            val allFlatsTrendString = getAllFlatsTrendString(apartmentsDao, days)
-            call.respondText(allFlatsTrendString, ContentType.Text.Plain)
-        }
 
+        get("/about") { call.respondText("Online Trends", ContentType.Text.Html) }
+        get("/") { handleGetTrends(call, apartmentsDao) }
+        get("/trends") { handleGetTrends(call, apartmentsDao) }
+        get("/apartment/{id}") { handleGetApartment(call, apartmentsDao) }
         get("/pull") {
             logger.info { "Load all apartments from r.onliner.by and save to db" }
 
@@ -74,6 +73,22 @@ fun Application.main() {
     logger.info { "Hello, World!" }
 
     runApartmentsService(apartmentsDao)
+}
+
+private suspend fun handleGetApartment(call: ApplicationCall, apartmentsDao: MySqlApartmentsDao) {
+    val id = call.parameters["id"]
+    val prices = TrendsLogic(apartmentsDao)
+            .getPricesOverAllTimeForApartmentORx(id!!.toLong())
+            .map { Pair(it.timestamp, it.getUsdPrice()) }
+            .toList()
+            .await()
+    call.respondText(prices.toString(), ContentType.Text.Plain)
+}
+
+private suspend fun handleGetTrends(call: ApplicationCall, apartmentsDao: MySqlApartmentsDao) {
+    val days = call.parameters["days"]?.toLong() ?: 5
+    val allFlatsTrendString = getAllFlatsTrendString(apartmentsDao, days)
+    call.respondText(allFlatsTrendString, ContentType.Text.Plain)
 }
 
 private fun getAllFlatsTrendString(apartmentsDao: MySqlApartmentsDao, days: Long): String {

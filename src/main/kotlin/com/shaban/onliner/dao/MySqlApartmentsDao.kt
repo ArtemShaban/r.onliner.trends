@@ -86,6 +86,20 @@ class MySqlApartmentsDao : ApartmentsDao {
         }
     }
 
+    override fun loadAllPricesORx(apartmentId: Long): Observable<Price> {
+        return execORx {
+            var result = emptyList<Price>()
+            transaction {
+                result = ApartmentsTable
+                        .selectAll()
+                        .andWhere { Op.build { ApartmentsTable.id eq apartmentId } }
+                        .map { gson.fromJson(it[ApartmentsTable.pureJson], Apartment::class.java) }
+                        .map { it.prices }
+                        .flatten()
+            }
+            result
+        }
+    }
 
     private fun execCRx(request: () -> Unit): Completable = Completable
             .fromAction(request)
