@@ -1,5 +1,6 @@
 package com.shaban.onliner.api
 
+import com.github.kittinunf.fuel.core.Parameters
 import com.github.kittinunf.fuel.gson.gsonDeserializer
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.rx.rxObject
@@ -10,6 +11,8 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import kotlinx.atomicfu.atomic
 import mu.KotlinLogging
+import org.locationtech.spatial4j.context.SpatialContext
+import org.locationtech.spatial4j.shape.Rectangle
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -17,28 +20,43 @@ import java.time.format.DateTimeFormatter
 class ApartmentsLoader {
     private val logger = KotlinLogging.logger {}
 
-    fun fetchAllApartmentsORx(): Observable<Apartment> {
+    fun getRegionMetaDataSRx(region: Rectangle): Single<RegionMetaData> {
+        return getApartmentsPageSRx(region = region)
+                .map { RegionMetaData(it.total, it.page.last, it.page.limit) }
+    }
+
+    fun fetchApartmentsORx(region: Rectangle): Observable<Apartment> {
         val count = atomic(0L)
-        return getApartmentsPageSRx(1)
+        return getApartmentsPageSRx(1, region)
                 .flatMapObservable { apartmentsResponse ->
                     var result = Observable.fromIterable(apartmentsResponse.apartments)
                     for (i in apartmentsResponse.page.current + 1..apartmentsResponse.page.last)
-                        result = result.mergeWith(getApartmentsPageSRx(i)
+                        result = result.mergeWith(getApartmentsPageSRx(i, region)
                                 .flatMapObservable { t -> Observable.fromIterable(t.apartments) })
 
                     result
                 }
                 .map(this::convertApiApartment)
                 .doOnNext { count.incrementAndGet() }
-                .doOnSubscribe { logger.info { "Start fetching all apartments from pk.api.onliner.by" } }
-                .doOnComplete { logger.info { "Fetched $count apartments from pk.api.onliner.by" } }
+                .doOnSubscribe { logger.info { "Start fetching apartments from pk.api.onliner.by for region=$region" } }
+                .doOnComplete { logger.info { "Fetched $count apartments from pk.api.onliner.by for region=$region" } }
     }
 
-    private fun getApartmentsPageSRx(pageNumber: Int): Single<ApartmentsResponse> {
+    private fun getApartmentsPageSRx(pageNumber: Int = 0, region: Rectangle = SpatialContext.GEO.worldBounds): Single<ApartmentsResponse> {
         return "https://pk.api.onliner.by/search/apartments"
-                .httpGet(listOf("page" to pageNumber))
+                .httpGet(getParameters(pageNumber, region))
                 .rxObject(gsonDeserializer<ApartmentsResponse>())
                 .map { it.get() }
+    }
+
+    private fun getParameters(pageNumber: Int, region: Rectangle): Parameters {
+        return listOf(
+                "page" to pageNumber,
+                "bounds[lb][lat]" to region.minY,
+                "bounds[lb][long]" to region.minX,
+                "bounds[rt][lat]" to region.maxY,
+                "bounds[rt][long]" to region.maxX
+        )
     }
 
     private fun convertApiApartment(apiApartment: ApiApartment): Apartment {

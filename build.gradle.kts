@@ -71,6 +71,9 @@ dependencies {
     //coroutines to rx
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-rx2:1.3.7")
 
+    //spatial/geo
+    implementation("org.locationtech.spatial4j:spatial4j:0.7")
+
     //tests
     testImplementation("junit:junit:4.12")
 }
