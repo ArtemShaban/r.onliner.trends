@@ -45,11 +45,14 @@ class ApartmentsDataService(
     fun fetchAllApartmentsAndSaveSRx(retryCount: Long = 0): Single<Long> {
         return getRegionsToFetchApartmentsORx()
                 //use concat map to avoid throttling from onliner side
-                .concatMap { region -> apartmentsLoader.fetchApartmentsORx(region) }
-                .flatMap {
-                    apartmentsDao
-                            .saveApartmentCRx(it)
-                            .andThen(Observable.just(it))
+                .concatMap { region ->
+                    apartmentsLoader
+                            .fetchApartmentsORx(region)
+                            .flatMap {
+                                apartmentsDao
+                                        .saveApartmentCRx(it)
+                                        .andThen(Observable.just(it))
+                            }
                 }
                 .retry { times, t ->
                     val retry = times < retryCount
