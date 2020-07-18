@@ -55,12 +55,11 @@ fun Application.main() {
         get("/") { handleGetTrends(call, apartmentsDao) }
         get("/trends") { handleGetTrends(call, apartmentsDao) }
         get("/apartment/{id}") { handleGetApartment(call, apartmentsDao) }
-        get("/pull") {
-            logger.info { "Load all apartments from r.onliner.by and save to db" }
+        get("/fetch") {
 
-            val successText = "Successfully loaded all apartments from r.onliner.by and saved to db"
+            val successText = "All apartments have been successfully fetched and saved to db"
             ApartmentsLoader()
-                    .loadAllApartmentsORx()
+                    .fetchAllApartmentsORx()
                     .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
                     .doOnComplete { logger.info { successText } }
                     .doOnError { e -> logger.error(e) { "Error on loading all apartments and saving to db" } }

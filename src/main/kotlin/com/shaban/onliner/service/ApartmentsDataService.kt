@@ -15,6 +15,7 @@ class ApartmentsDataService(
 ) {
     private val logger = KotlinLogging.logger { }
     private val period = Duration.ofDays(1).toMillis()
+    private val retryCount = 3L
 
     fun runCRx(): Completable {
         return Completable
@@ -23,7 +24,7 @@ class ApartmentsDataService(
                     logger.info { "We will fetch all apartments at ${Instant.now().plusMillis(delay)}" }
                     Completable
                             .timer(delay, TimeUnit.MILLISECONDS)
-                            .andThen(loadAndSaveApartmentsCRx())
+                            .andThen(fetchAllApartmentsAndSaveCRx())
                 }
                 .repeat()
                 .subscribeOn(Schedulers.io())
@@ -31,11 +32,17 @@ class ApartmentsDataService(
 
     private fun getDelay(): Long = period - (Instant.now().toEpochMilli() % period)
 
-    private fun loadAndSaveApartmentsCRx(): Completable {
-        return Completable.defer {
-            apartmentsLoader
-                    .loadAllApartmentsORx()
-                    .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
-        }
+    private fun fetchAllApartmentsAndSaveCRx(): Completable {
+        return Completable
+                .defer {
+                    apartmentsLoader
+                            .fetchAllApartmentsORx()
+                            .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
+                }
+                .doOnComplete { logger.info { "All apartments have been fetched and saved successfully =)" } }
+                .doOnError { logger.warn(it) { "Error on fetching and saving all apartments. We will retry $retryCount times." } }
+                .retry(retryCount)
+                .doOnError { logger.error(it) { "Fatal error on fetching and saving all apartments." } }
+                .onErrorComplete()
     }
 }
