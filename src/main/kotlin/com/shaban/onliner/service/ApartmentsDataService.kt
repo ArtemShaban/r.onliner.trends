@@ -3,6 +3,8 @@ package com.shaban.onliner.service
 import com.shaban.onliner.api.ApartmentsLoader
 import com.shaban.onliner.dao.ApartmentsDao
 import io.reactivex.Completable
+import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import mu.KotlinLogging
 import java.time.Duration
@@ -15,16 +17,18 @@ class ApartmentsDataService(
 ) {
     private val logger = KotlinLogging.logger { }
     private val period = Duration.ofDays(1).toMillis()
-    private val retryCount = 3L
 
-    fun runCRx(): Completable {
+    fun startCronCRx(): Completable {
         return Completable
                 .defer {
                     val delay = getDelay()
-                    logger.info { "We will fetch all apartments at ${Instant.now().plusMillis(delay)}" }
+                    logger.info { "We will fetch apartments at ${Instant.now().plusMillis(delay)}" }
                     Completable
                             .timer(delay, TimeUnit.MILLISECONDS)
-                            .andThen(fetchAllApartmentsAndSaveCRx())
+                            .andThen(fetchAllApartmentsAndSaveSRx(3)
+                                    .ignoreElement()
+                                    .onErrorComplete()
+                            )
                 }
                 .repeat()
                 .subscribeOn(Schedulers.io())
@@ -32,17 +36,23 @@ class ApartmentsDataService(
 
     private fun getDelay(): Long = period - (Instant.now().toEpochMilli() % period)
 
-    private fun fetchAllApartmentsAndSaveCRx(): Completable {
-        return Completable
-                .defer {
-                    apartmentsLoader
-                            .fetchAllApartmentsORx()
-                            .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
+    fun fetchAllApartmentsAndSaveSRx(retryCount: Long = 0): Single<Long> {
+        return apartmentsLoader
+                .fetchAllApartmentsORx()
+                .flatMap {
+                    apartmentsDao
+                            .saveApartmentCRx(it)
+                            .andThen(Observable.just(it))
                 }
                 .doOnComplete { logger.info { "All apartments have been fetched and saved successfully =)" } }
-                .doOnError { logger.warn(it) { "Error on fetching and saving all apartments. We will retry $retryCount times." } }
+                .retry { times, t ->
+                    val retry = times < retryCount
+                    if (retry) logger.warn(t) { "Error on fetching and saving apartments. Retry ${times + 1} time." }
+
+                    retry
+                }
                 .retry(retryCount)
-                .doOnError { logger.error(it) { "Fatal error on fetching and saving all apartments." } }
-                .onErrorComplete()
+                .doOnError { logger.error(it) { "Fatal error on fetching and saving apartments." } }
+                .count()
     }
 }

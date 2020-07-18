@@ -56,16 +56,10 @@ fun Application.main() {
         get("/trends") { handleGetTrends(call, apartmentsDao) }
         get("/apartment/{id}") { handleGetApartment(call, apartmentsDao) }
         get("/fetch") {
-
-            val successText = "All apartments have been successfully fetched and saved to db"
-            ApartmentsLoader()
-                    .fetchAllApartmentsORx()
-                    .flatMapCompletable { apartmentsDao.saveApartmentCRx(it) }
-                    .doOnComplete { logger.info { successText } }
-                    .doOnError { e -> logger.error(e) { "Error on loading all apartments and saving to db" } }
+            val count = ApartmentsDataService(ApartmentsLoader(), apartmentsDao)
+                    .fetchAllApartmentsAndSaveSRx()
                     .await()
-
-            call.respondText { successText }
+            call.respondText { "$count apartments have been successfully fetched and saved to db" }
         }
     }
 
@@ -106,7 +100,7 @@ private fun getAllFlatsTrendString(apartmentsDao: MySqlApartmentsDao, days: Long
 
 private fun runApartmentsService(apartmentsDao: MySqlApartmentsDao) {
     ApartmentsDataService(ApartmentsLoader(), apartmentsDao)
-            .runCRx()
+            .startCronCRx()
             .subscribe() //todo
 }
 
