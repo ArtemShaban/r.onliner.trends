@@ -76,8 +76,13 @@ class ApartmentsDataService(
     }
 
     private fun getRegionsWithLimitedApartmentsCountORx(limit: Int, baseRectangle: Rectangle, baseRectangleMetaData: RegionMetaData): Observable<Rectangle> {
+
+        val debugLogFunc: (String) -> Unit = { msg ->
+            logger.debug { "$msg MetaData.total=${baseRectangleMetaData.total}. Limit=$limit. Rectangle=$baseRectangle" }
+        }
+
         if (baseRectangleMetaData.total > limit) {
-            logger.debug { "MetaData.total=${baseRectangleMetaData.total}. limit=$limit. split rectangle for 4 and check each new rectangle. rectangle=$baseRectangle" }
+            debugLogFunc.invoke("Split rectangle for 4 and check each new rectangle.")
             return Observable
                     .just(baseRectangle)
                     .flatMap { rectangle ->
@@ -97,8 +102,13 @@ class ApartmentsDataService(
                     }
 
         } else {
-            logger.debug { "MetaData.total=${baseRectangleMetaData.total}. limit=$limit. it's ok =) rectangle=$baseRectangle" }
-            return Observable.just(baseRectangle)
+            return if (baseRectangleMetaData.total > 0) {
+                debugLogFunc.invoke("it's ok =)")
+                Observable.just(baseRectangle)
+            } else {
+                debugLogFunc.invoke("Skip this region.")
+                Observable.empty()
+            }
         }
     }
 }
