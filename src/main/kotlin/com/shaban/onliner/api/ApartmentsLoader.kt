@@ -9,6 +9,7 @@ import com.shaban.onliner.api.model.ApiApartment
 import com.shaban.onliner.model.*
 import io.reactivex.Observable
 import io.reactivex.Single
+import io.reactivex.schedulers.Schedulers
 import kotlinx.atomicfu.atomic
 import mu.KotlinLogging
 import org.locationtech.spatial4j.context.SpatialContext
@@ -46,6 +47,7 @@ class ApartmentsLoader {
         return "https://pk.api.onliner.by/search/apartments"
                 .httpGet(getParameters(pageNumber, region))
                 .rxObject(gsonDeserializer<ApartmentsResponse>())
+                .observeOn(Schedulers.newThread()) //todo think about it
                 .map { it.get() }
     }
 
