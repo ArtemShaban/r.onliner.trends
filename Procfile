@@ -1,1 +1,1 @@
-web: java -jar build/libs/r.onliner.trends-0.1-all.jar -port=$PORT -Xmx1G
+web: java -jar build/libs/r.onliner.trends-0.1-all.jar -port=$PORT
