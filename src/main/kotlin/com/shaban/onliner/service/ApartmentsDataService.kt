@@ -37,7 +37,7 @@ class ApartmentsDataService(
                             )
                 }
                 .repeat()
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(Schedulers.newThread()) //todo think
     }
 
     private fun getDelay(): Long = period - (Instant.now().toEpochMilli() % period)

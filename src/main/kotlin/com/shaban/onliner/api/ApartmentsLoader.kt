@@ -9,7 +9,6 @@ import com.shaban.onliner.api.model.ApiApartment
 import com.shaban.onliner.model.*
 import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.schedulers.Schedulers
 import kotlinx.atomicfu.atomic
 import mu.KotlinLogging
 import org.locationtech.spatial4j.context.SpatialContext
@@ -44,16 +43,12 @@ class ApartmentsLoader {
     }
 
     private fun getApartmentsPageSRx(pageNumber: Int = 0, region: Rectangle = SpatialContext.GEO.worldBounds): Single<ApartmentsResponse> {
-        return Single
-                .defer {
-                    "https://pk.api.onliner.by/search/apartments"
-                            .httpGet(getParameters(pageNumber, region))
-                            .rxObject(gsonDeserializer<ApartmentsResponse>())
-                            .map { it.get() }
-                }
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-
+        return Single.defer {
+            "https://pk.api.onliner.by/search/apartments"
+                    .httpGet(getParameters(pageNumber, region))
+                    .rxObject(gsonDeserializer<ApartmentsResponse>())
+                    .map { it.get() }
+        }
     }
 
     private fun getParameters(pageNumber: Int, region: Rectangle): Parameters {

@@ -8,7 +8,6 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.reactivex.Completable
 import io.reactivex.Observable
-import io.reactivex.schedulers.Schedulers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
@@ -103,11 +102,11 @@ class MySqlApartmentsDao : ApartmentsDao {
 
     private fun execCRx(request: () -> Unit): Completable = Completable
             .fromAction(request)
-            .subscribeOn(Schedulers.io())
+//            .subscribeOn(Schedulers.io())
 
     private fun <T> execORx(request: () -> List<T>): Observable<T> = Observable
             .fromCallable(request)
             .flatMap { Observable.fromIterable(it) }
-            .subscribeOn(Schedulers.io())
+//            .subscribeOn(Schedulers.io())
 
 }
