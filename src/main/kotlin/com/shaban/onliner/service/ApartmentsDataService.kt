@@ -98,7 +98,6 @@ class ApartmentsDataService(
                     .concatMap { rectangle ->
                         apartmentsLoader
                                 .getRegionMetaDataSRx(rectangle)
-                                .observeOn(Schedulers.computation()) //todo think about this
                                 .flatMapObservable { metaData -> getRegionsWithLimitedApartmentsCountORx(limit, rectangle, metaData) }
                     }
 
