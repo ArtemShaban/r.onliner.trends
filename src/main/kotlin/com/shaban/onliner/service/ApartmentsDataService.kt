@@ -48,11 +48,11 @@ class ApartmentsDataService(
                 .concatMap { region ->
                     apartmentsLoader
                             .fetchApartmentsORx(region)
-                            .flatMap {
+                            .flatMap({
                                 apartmentsDao
                                         .saveApartmentCRx(it)
                                         .andThen(Observable.just(it))
-                            }
+                            }, true, 10)
                 }
                 .retry { times, t ->
                     val retry = times < retryCount
