@@ -27,11 +27,11 @@ class ApartmentsLoader {
 
     fun fetchApartmentsORx(region: Rectangle): Observable<Apartment> {
         val count = atomic(0L)
-        return getApartmentsPageSRx(1, region, true)
+        return getApartmentsPageSRx(1, region)
                 .flatMapObservable { apartmentsResponse ->
                     var result = Observable.fromIterable(apartmentsResponse.apartments)
                     for (i in apartmentsResponse.page.current + 1..apartmentsResponse.page.last)
-                        result = result.mergeWith(getApartmentsPageSRx(i, region, true)
+                        result = result.mergeWith(getApartmentsPageSRx(i, region)
                                 .flatMapObservable { t -> Observable.fromIterable(t.apartments) })
 
                     result
@@ -42,7 +42,7 @@ class ApartmentsLoader {
                 .doOnComplete { logger.info { "Fetched $count apartments from pk.api.onliner.by for region=$region" } }
     }
 
-    private fun getApartmentsPageSRx(pageNumber: Int = 1, region: Rectangle = SpatialContext.GEO.worldBounds, log: Boolean = false): Single<ApartmentsResponse> {
+    private fun getApartmentsPageSRx(pageNumber: Int = 1, region: Rectangle = SpatialContext.GEO.worldBounds): Single<ApartmentsResponse> {
         return Single
                 .defer {
                     "https://pk.api.onliner.by/search/apartments"
@@ -50,9 +50,9 @@ class ApartmentsLoader {
                             .rxObject(gsonDeserializer<ApartmentsResponse>())
                             .map { it.get() }
                 }
-                .doOnSubscribe { if (log) logger.info { "Start fetching page № $pageNumber for region:$region" } }
-                .doOnSuccess { if (log) logger.info { "Fetched page № $pageNumber for region:$region" } }
-                .doOnError { if (log) logger.error(it) { "Error on fetching page № $pageNumber for region:$region" } }
+                .doOnSubscribe { logger.debug { "Start fetching page № $pageNumber for region:$region" } }
+                .doOnSuccess { logger.debug { "Fetched page № $pageNumber for region:$region" } }
+                .doOnError { logger.error(it) { "Error on fetching page № $pageNumber for region:$region" } }
     }
 
     private fun getParameters(pageNumber: Int, region: Rectangle): Parameters {
