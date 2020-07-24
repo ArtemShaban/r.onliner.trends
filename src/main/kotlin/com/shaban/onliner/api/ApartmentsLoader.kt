@@ -9,6 +9,7 @@ import com.shaban.onliner.api.model.ApiApartment
 import com.shaban.onliner.model.*
 import io.reactivex.Observable
 import io.reactivex.Single
+import io.reactivex.schedulers.Schedulers
 import kotlinx.atomicfu.atomic
 import mu.KotlinLogging
 import org.locationtech.spatial4j.context.SpatialContext
@@ -53,6 +54,8 @@ class ApartmentsLoader {
                 .doOnSubscribe { if (log) logger.info { "Start fetching page № $pageNumber for region:$region" } }
                 .doOnSuccess { if (log) logger.info { "Fetched page № $pageNumber for region:$region" } }
                 .doOnError { if (log) logger.error(it) { "Error on fetching page № $pageNumber for region:$region" } }
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
     }
 
     private fun getParameters(pageNumber: Int, region: Rectangle): Parameters {
