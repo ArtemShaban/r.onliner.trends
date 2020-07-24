@@ -27,7 +27,7 @@ class ApartmentsLoader {
 
     fun fetchApartmentsORx(region: Rectangle): Observable<Apartment> {
         val count = atomic(0L)
-        return getApartmentsPageSRx(1, region)
+        return getApartmentsPageSRx(1, region, true)
                 .flatMapObservable { apartmentsResponse ->
                     var result = Observable.fromIterable(apartmentsResponse.apartments)
                     for (i in apartmentsResponse.page.current + 1..apartmentsResponse.page.last)
@@ -42,7 +42,7 @@ class ApartmentsLoader {
                 .doOnComplete { logger.info { "Fetched $count apartments from pk.api.onliner.by for region=$region" } }
     }
 
-    private fun getApartmentsPageSRx(pageNumber: Int = 0, region: Rectangle = SpatialContext.GEO.worldBounds): Single<ApartmentsResponse> {
+    private fun getApartmentsPageSRx(pageNumber: Int = 0, region: Rectangle = SpatialContext.GEO.worldBounds, log: Boolean = false): Single<ApartmentsResponse> {
         return Single
                 .defer {
                     "https://pk.api.onliner.by/search/apartments"
@@ -50,9 +50,9 @@ class ApartmentsLoader {
                             .rxObject(gsonDeserializer<ApartmentsResponse>())
                             .map { it.get() }
                 }
-                .doOnSubscribe { logger.info { "Start fetching page № $pageNumber for region:$region" } }
-                .doOnSuccess { logger.info { "Fetched page № $pageNumber for region:$region" } }
-                .doOnError { logger.error(it) { "Error on fetching page № $pageNumber for region:$region" } }
+                .doOnSubscribe { if (log) logger.info { "Start fetching page № $pageNumber for region:$region" } }
+                .doOnSuccess { if (log) logger.info { "Fetched page № $pageNumber for region:$region" } }
+                .doOnError { if (log) logger.error(it) { "Error on fetching page № $pageNumber for region:$region" } }
     }
 
     private fun getParameters(pageNumber: Int, region: Rectangle): Parameters {
