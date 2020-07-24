@@ -8,12 +8,15 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.reactivex.Completable
 import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
+import java.util.concurrent.Executors
 
 class MySqlApartmentsDao : ApartmentsDao {
-    val gson = Gson()
+    private val gson = Gson()
+    private val fixedTheadPoolScheduler = Schedulers.from(Executors.newFixedThreadPool(10))  //1 thread per 1 connection
 
     init {
         val dbCredentials = getDbCredentials()
@@ -102,11 +105,11 @@ class MySqlApartmentsDao : ApartmentsDao {
 
     private fun execCRx(request: () -> Unit): Completable = Completable
             .fromAction(request)
-//            .subscribeOn(Schedulers.io())
+            .subscribeOn(fixedTheadPoolScheduler)
 
     private fun <T> execORx(request: () -> List<T>): Observable<T> = Observable
             .fromCallable(request)
             .flatMap { Observable.fromIterable(it) }
-//            .subscribeOn(Schedulers.io())
+            .subscribeOn(fixedTheadPoolScheduler)
 
 }
