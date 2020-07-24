@@ -31,7 +31,7 @@ class ApartmentsLoader {
                 .flatMapObservable { apartmentsResponse ->
                     var result = Observable.fromIterable(apartmentsResponse.apartments)
                     for (i in apartmentsResponse.page.current + 1..apartmentsResponse.page.last)
-                        result = result.mergeWith(getApartmentsPageSRx(i, region)
+                        result = result.mergeWith(getApartmentsPageSRx(i, region, true)
                                 .flatMapObservable { t -> Observable.fromIterable(t.apartments) })
 
                     result
@@ -42,7 +42,7 @@ class ApartmentsLoader {
                 .doOnComplete { logger.info { "Fetched $count apartments from pk.api.onliner.by for region=$region" } }
     }
 
-    private fun getApartmentsPageSRx(pageNumber: Int = 0, region: Rectangle = SpatialContext.GEO.worldBounds, log: Boolean = false): Single<ApartmentsResponse> {
+    private fun getApartmentsPageSRx(pageNumber: Int = 1, region: Rectangle = SpatialContext.GEO.worldBounds, log: Boolean = false): Single<ApartmentsResponse> {
         return Single
                 .defer {
                     "https://pk.api.onliner.by/search/apartments"
