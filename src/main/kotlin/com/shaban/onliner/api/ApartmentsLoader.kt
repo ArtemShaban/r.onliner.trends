@@ -43,12 +43,16 @@ class ApartmentsLoader {
     }
 
     private fun getApartmentsPageSRx(pageNumber: Int = 0, region: Rectangle = SpatialContext.GEO.worldBounds): Single<ApartmentsResponse> {
-        return Single.defer {
-            "https://pk.api.onliner.by/search/apartments"
-                    .httpGet(getParameters(pageNumber, region))
-                    .rxObject(gsonDeserializer<ApartmentsResponse>())
-                    .map { it.get() }
-        }
+        return Single
+                .defer {
+                    "https://pk.api.onliner.by/search/apartments"
+                            .httpGet(getParameters(pageNumber, region))
+                            .rxObject(gsonDeserializer<ApartmentsResponse>())
+                            .map { it.get() }
+                }
+                .doOnSubscribe { logger.info { "Start fetching page № $pageNumber for region:$region" } }
+                .doOnSuccess { logger.info { "Fetched page № $pageNumber for region:$region" } }
+                .doOnError { logger.error(it) { "Error on fetching page № $pageNumber for region:$region" } }
     }
 
     private fun getParameters(pageNumber: Int, region: Rectangle): Parameters {
